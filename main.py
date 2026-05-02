@@ -22,7 +22,6 @@ def node_2(state: State):
     print("node_2")
     print(state)
     new_state = state["my_state"] + "Japan."
-    print(new_state)
     return {"my_state": new_state}
 
 def node_3(state: State):
@@ -63,7 +62,11 @@ def main():
 
     print("Diagram saved as graph_diagram.png - check your file explorer!")
 
-    graph.invoke({"my_state": "Hello! I am Jivitesh. "})
+    final_state = graph.invoke({"my_state": "Hello! I am Jivitesh. "})
+
+    # Print the final state after invoking the graph
+    print("--- Final Result ---")
+    print(final_state)
 
 if __name__ == "__main__":
     main()
