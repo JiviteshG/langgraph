@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from typing_extensions import TypedDict
 from IPython.display import display, Markdown, Image
 from langgraph.graph import StateGraph, START, END
+import random
+from typing import Literal
 
 
 class State(TypedDict):
@@ -30,6 +32,11 @@ def node_3(state: State):
     new_state = state["my_state"] + "Italy."
     return {"my_state": new_state}
 
+def decide_node(state: State) -> Literal["node_2", "node_3"]:
+    print("decide_node")
+    print(state)
+    return random.choice(["node_2", "node_3"])
+
 def main():
     load_dotenv()
     print("Welcome to LangGraph!")
@@ -41,14 +48,13 @@ def main():
     # add nodes
     builder.add_node("node_1", node_1)
     builder.add_node("node_2", node_2)
-    # builder.add_node("node_3", node_3)
+    builder.add_node("node_3", node_3)
 
     # add edges
     builder.add_edge(START, "node_1")
-    builder.add_edge("node_1", "node_2")
-    # builder.add_edge("node_1", "node_3")
+    builder.add_conditional_edges("node_1", decide_node)
     builder.add_edge("node_2", END)
-    # builder.add_edge("node_3", END)
+    builder.add_edge("node_3", END)
 
     graph = builder.compile()
 
@@ -57,10 +63,10 @@ def main():
 
     # Save the diagram as a PNG file
     graph_png = graph.get_graph().draw_mermaid_png()
-    with open("images\\graph_diagram.png", "wb") as f:
+    with open("images\\graph_diagram_full.png", "wb") as f:
         f.write(graph_png)
 
-    print("Diagram saved as graph_diagram.png - check your file explorer!")
+    print("Diagram saved as graph_diagram_full.png - check your file explorer!")
 
     final_state = graph.invoke({"my_state": "Hello! I am Jivitesh. "})
 
