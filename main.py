@@ -9,6 +9,8 @@ from langgraph.graph import StateGraph, START, END, MessagesState
 import random
 from typing import Literal
 from langchain_groq import ChatGroq
+from langgraph.prebuilt import ToolNode, tools_condition
+
 
 # User defined state type for the graph which is a TypedDict with a single key "my_state" of type str. This will be the state that is passed between nodes in the graph.
 class State(TypedDict):
@@ -47,10 +49,11 @@ def decide_node(state: State) -> Literal["node_2", "node_3"]:
 def llm_node(state: MessagesState) -> MessagesState:
     print("\n" + "*" * 80)
     print("Inside llm_node")
-    
+    print(state)
     # MessagesState stores a list of messages
     response = llm_with_tools.invoke(state["messages"])
     
+    print("Exiting llm_node")
     # Return a list to append the new message to the history
     return {"messages": [response]}
 
@@ -139,7 +142,7 @@ def main():
     inputs = {"messages": 
               [
                   {
-                      "role": "system", "content": "You are Sherlock Holmes. Always answer sarcastically and use your detective skills."
+                      "role": "system", "content": "You are Sherlock Holmes. Always answer sarcastically."
                     },
                   {
                       "role": "user", "content": "How do you solve a mystery?"
@@ -154,6 +157,23 @@ def main():
     for message in final_state["messages"]:
         print(message.pretty_print())
 
+    # Tooll call with LangGraph
+    builder = StateGraph(MessagesState)
+    
+    builder.add_node("llm_node", llm_node)
+    builder.add_node("tools", ToolNode(tools))
+    
+    builder.add_edge(START, "llm_node")
+    builder.add_conditional_edges("llm_node", tools_condition)
+
+    builder.add_edge("tools", END)
+    
+    graph = builder.compile()
+
+    # Mermaid diagram for the graph
+    graph_png = graph.get_graph().draw_mermaid_png()
+    with open("images\\graph_diagram_llm_tools.png", "wb") as f:
+        f.write(graph_png)
 
     
 
