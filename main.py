@@ -43,17 +43,16 @@ def decide_node(state: State) -> Literal["node_2", "node_3"]:
 
 
 
-# more nodes for LanggGraph
+# nodes for LanggGraph
 def llm_node(state: MessagesState) -> MessagesState:
-    print("")
-    print("*" * 20)
+    print("\n" + "*" * 80)
     print("Inside llm_node")
-    print("llm_node")
-    print(state)
     
-    response = llm_with_tools.invoke(state["message"])
-    return {"message": response.content}
-
+    # MessagesState stores a list of messages
+    response = llm_with_tools.invoke(state["messages"])
+    
+    # Return a list to append the new message to the history
+    return {"messages": [response]}
 
 # Tool function
 def multiply(a: int, b: int) -> int:
@@ -123,7 +122,37 @@ def main():
     response = llm_with_tools.invoke("What is 523*780236?")
     pprint(response.__dict__)
 
-    llm_node({"message": "What is 523*780236?"})
+    llm_node({"messages": [{"role": "user", "content": "What is 523*780236?"}]})
+
+    builder = StateGraph(MessagesState)
+    builder.add_node("llm_node", llm_node)
+    builder.add_edge(START, "llm_node")
+    builder.add_edge("llm_node", END)
+    
+    graph = builder.compile()
+
+    # Mermaid diagram for the graph
+    graph_png = graph.get_graph().draw_mermaid_png()
+    with open("images\\graph_diagram_llm.png", "wb") as f:
+        f.write(graph_png)
+
+    inputs = {"messages": 
+              [
+                  {
+                      "role": "system", "content": "You are Sherlock Holmes. Always answer sarcastically and use your detective skills."
+                    },
+                  {
+                      "role": "user", "content": "How do you solve a mystery?"
+                    }   
+            ]}
+
+    final_state = graph.invoke(inputs)
+
+    print("Final state from graph with llm_node:")
+    pprint(final_state)
+
+    for message in final_state["messages"]:
+        print(message.pretty_print())
 
 
     
