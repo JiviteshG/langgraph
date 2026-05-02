@@ -165,8 +165,8 @@ def main():
     
     builder.add_edge(START, "llm_node")
     builder.add_conditional_edges("llm_node", tools_condition)
-
-    builder.add_edge("tools", END)
+    builder.add_edge("tools", "llm_node")
+    # builder.add_edge("llm_node", END)
     
     graph = builder.compile()
 
@@ -174,7 +174,25 @@ def main():
     graph_png = graph.get_graph().draw_mermaid_png()
     with open("images\\graph_diagram_llm_tools.png", "wb") as f:
         f.write(graph_png)
+    
+    
+    inputs = {"messages":
+                [
+                    {
+                        "role": "system", "content": "You are Sherlock Holmes. Always answer sarcastically. If you need to do a calculation, use the tools available to you."
+                        },
+                    {
+                        "role": "user", "content": "What is 523*780236?"
+                        }   
+                ]}
 
+    final_state = graph.invoke(inputs)
+    print("Final state from graph with llm_node and tools:")
+    pprint(final_state)
+    for message in final_state["messages"]:
+        message.pretty_print()
+        
+    
     
 
 
