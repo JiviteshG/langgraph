@@ -5,14 +5,16 @@ from dotenv import load_dotenv
 # Note: you may also use pydantic
 from typing_extensions import TypedDict
 from IPython.display import display, Markdown, Image
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph, START, END, MessagesState
 import random
 from typing import Literal
 from langchain_groq import ChatGroq
 
-
+# User defined state type for the graph which is a TypedDict with a single key "my_state" of type str. This will be the state that is passed between nodes in the graph.
 class State(TypedDict):
     my_state: str
+
+
 
 # nodes
 # Nodes are essentially python functions
@@ -39,6 +41,20 @@ def decide_node(state: State) -> Literal["node_2", "node_3"]:
     print(state)
     return random.choice(["node_2", "node_3"])
 
+
+
+# more nodes for LanggGraph
+def llm_node(state: MessagesState) -> MessagesState:
+    print("")
+    print("*" * 20)
+    print("Inside llm_node")
+    print("llm_node")
+    print(state)
+    
+    response = llm_with_tools.invoke(state["message"])
+    return {"message": response.content}
+
+
 # Tool function
 def multiply(a: int, b: int) -> int:
     # Important to have a docstring for tool functions, as it helps LLMs understand their purpose and how to use them effectively.
@@ -53,6 +69,11 @@ def multiply(a: int, b: int) -> int:
         int: The product of the two numbers.
     """
     return a * b
+
+load_dotenv()
+llm = ChatGroq(model = "llama-3.1-8b-instant", temperature=0.9)
+tools = [multiply]
+llm_with_tools = llm.bind_tools(tools)
 
 def main():
     load_dotenv()
@@ -91,18 +112,18 @@ def main():
     print("--- Final Result ---")
     print(final_state)
 
-    llm = ChatGroq(model = "llama-3.1-8b-instant", temperature=0.9)
+    
 
     # Gives incorrect answer for some reason!!! 
     print("Answer to 523*780236 without tool:")
     print(llm.invoke("What is 523*780236?").content)
 
-    tools = [multiply]
-
     print("Answer to 523*780236 with tool:")
-    llm_with_tools = llm.bind_tools(tools)
+    
     response = llm_with_tools.invoke("What is 523*780236?")
     pprint(response.__dict__)
+
+    llm_node({"message": "What is 523*780236?"})
 
 
     
