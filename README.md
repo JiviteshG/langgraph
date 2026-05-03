@@ -1,2 +1,2 @@
-# langgraph
-LangGraph PlayGround
+# langgraph-projects
+LangGraph PlayGround for basic projects
